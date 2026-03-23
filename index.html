@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="manifest.json" />
+
+    <title>Anime Tracker</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto;
+        background: linear-gradient(180deg, #141e30, #243b55);
+        color: white;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        font-size: 26px;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      .logo {
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+
+      .menu {
+        font-size: 28px;
+        opacity: 0.8;
+      }
+
+      #animeList {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .animeItem {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transform: scale(1);
+        transition: all 0.25s ease;
+        animation: fadeIn 0.35s ease;
+      }
+
+      .animeItem:hover {
+        transform: scale(1.02);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .season {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        background: #ff4d8d;
+      }
+
+      .title {
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .episode {
+        font-size: 20px;
+        background: #4cc9f0;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+      }
+
+      .addBtn {
+        position: fixed;
+        bottom: 22px;
+        right: 22px;
+        width: 64px;
+        height: 64px;
+        border: none;
+        border-radius: 50%;
+        font-size: 34px;
+        background: #ff4d8d;
+        color: white;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modalContent {
+        background: #1f2937;
+        padding: 24px;
+        border-radius: 18px;
+        width: 85%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        animation: pop 0.25s ease;
+      }
+
+      .modalContent h2 {
+        margin: 0 0 6px 0;
+      }
+
+      .modalContent input {
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+      }
+
+      .modalButtons {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .modalButtons button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+      }
+
+      .add {
+        background: #22c55e;
+        color: white;
+      }
+
+      .cancel {
+        background: #ef4444;
+        color: white;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pop {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="logo">🎌 Anime</div>
+      <div class="menu">☰</div>
+    </header>
+
+    <main id="animeList"></main>
+
+    <button class="addBtn" id="addBtn">＋</button>
+
+    <div class="modal" id="modal">
+      <div class="modalContent">
+        <h2>Новое аниме</h2>
+
+        <input id="name" placeholder="Название" />
+        <input id="season" type="number" placeholder="Сезон" />
+        <input id="episodeNow" type="number" placeholder="Серия сейчас" />
+
+        <div class="modalButtons">
+          <button class="add" onclick="addAnime()">Добавить</button>
+          <button class="cancel" onclick="closeModal()">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const list = document.getElementById("animeList");
+      const modal = document.getElementById("modal");
+      const addBtn = document.getElementById("addBtn");
+
+      let animes = JSON.parse(localStorage.getItem("animeTracker")) || [];
+
+      addBtn.onclick = () => {
+        modal.style.display = "flex";
+      };
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+
+      function save() {
+        localStorage.setItem("animeTracker", JSON.stringify(animes));
+      }
+
+      function render() {
+        list.innerHTML = "";
+
+        animes.forEach((anime, index) => {
+          const item = document.createElement("div");
+          item.className = "animeItem";
+
+          item.innerHTML = `
+<div class="left">
+<div class="season">${anime.season}</div>
+<div class="title">${anime.name}</div>
+</div>
+
+<div class="episode">${anime.now}</div>
+`;
+
+          item.onclick = () => {
+            if (confirm("Удалить это аниме?")) {
+              animes.splice(index, 1);
+              save();
+              render();
+            }
+          };
+
+          list.appendChild(item);
+        });
+      }
+
+      function addAnime() {
+        const name = document.getElementById("name").value;
+        const season = document.getElementById("season").value;
+        const now = document.getElementById("episodeNow").value;
+
+        if (!name) return;
+
+        animes.push({
+          name,
+          season,
+          now,
+        });
+
+        save();
+        render();
+        closeModal();
+
+        document.getElementById("name").value = "";
+        document.getElementById("season").value = "";
+        document.getElementById("episodeNow").value = "";
+      }
+
+      render();
+
+      // Регистрируем Service Worker для PWA-установки
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").catch(console.error);
+      }
+    </script>
+  </body>
+</html>
